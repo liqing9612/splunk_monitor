@@ -1,0 +1,439 @@
+<form theme="light">
+  <label>SRC-SRC4C-PROFILE-SERVICE-NEW</label>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="env">
+      <label>Environment</label>
+      <choice value="src-mtf">mtf</choice>
+      <choice value="pre-prod">pre-prod</choice>
+      <choice value="src-prod">prod</choice>
+      <default>src-prod</default>
+      <initialValue>src-prod</initialValue>
+    </input>
+    <input type="time" token="time">
+      <label>Time</label>
+      <default>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="endpoint">
+      <label>End point</label>
+      <choice value=".">all</choice>
+      <choice value="/api/src4c/cards">enroll card</choice>
+      <choice value="/api/src4c/profiles/prepare">prepare profile</choice>
+      <default>/api/src4c/cards</default>
+      <initialValue>/api/src4c/cards</initialValue>
+      <search>
+        <query/>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="Time_Interval">
+      <label>Chart Interval</label>
+      <choice value="10s">10 Seconds</choice>
+      <choice value="30s">30 Seconds</choice>
+      <choice value="1m">1 Minute</choice>
+      <choice value="5m">5 Minutes</choice>
+      <choice value="15m">15 Minutes</choice>
+      <choice value="30m">30 Minutes</choice>
+      <choice value="1h">1 Hour</choice>
+      <choice value="6h">6 Hours</choice>
+      <choice value="1d">1 Day</choice>
+      <choice value="10d">10 Days</choice>
+      <choice value="1mon">1 month</choice>
+      <default>15m</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <single>
+        <title>Total Transaction Count</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x006d9c","0x006d9c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Success Transaction Count</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65a637","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Error Count</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt; 399 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65a637","0xdc4e41"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>successfultransactions Average time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats avg(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>90th Percentile time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats perc90(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>95th Percentile time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats perc95(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>99th Percentile time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats perc99(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Min time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats min(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Max time (seconds)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats max(data.serviceResponse.time) as _t | eval time=round(_t/1000,2) | fields time</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="height">185</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x65a637","0xf8be34","0xd93f3c"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Successful responses (200–299)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 200 AND data.serviceResponse.status &lt; 300 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="rangeColors">["0x65a637","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Redirects (300–399)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 300 AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">185</option>
+        <option name="rangeColors">["0x65a637","0x53a051","0x53a051","0x53a051"]</option>
+        <option name="rangeValues">[0,30,70]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Client errors (400–499)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 400 AND data.serviceResponse.status &lt; 500 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="height">185</option>
+        <option name="rangeColors">["0x65a637","0xdc4e41"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Server errors (500–599)</title>
+      <single>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 500 AND data.serviceResponse.status &lt; 600 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |stats count</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="height">185</option>
+        <option name="rangeColors">["0x65a637","0xd93f3c","0x3c444d","0x3c444d","0x3c444d"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Success Trends</title>
+      <chart>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 200 AND data.serviceResponse.status &lt; 300 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |timechart span=$Time_Interval$ count as "Errors" by data.serviceResponse.status</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Redirect Trends</title>
+      <chart>
+        <title>redirects</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 300 AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |timechart span=$Time_Interval$ count as "Errors" by data.serviceResponse.status</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Client Error Trends</title>
+      <chart>
+        <title>error</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 400 AND data.serviceResponse.status &lt; 500 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |timechart span=$Time_Interval$ count as "Errors" by data.serviceResponse.status</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Server Error Trends</title>
+      <chart>
+        <title>server errror</title>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 500 AND data.serviceResponse.status &lt; 600 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |timechart span=$Time_Interval$ count as "Errors" by data.serviceResponse.status</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Overall Error Levels</title>
+      <chart>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt; 399 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ | timechart span=$Time_Interval$ count as "Errors" by data.serviceResponse.status</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>API Usage</title>
+      <chart>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ | timechart span=$Time_Interval$ count as "Endpoint" by data.serviceRequest.uri</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">left</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Latency Trends - Avg Time</title>
+      <chart>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ | timechart span=$Time_Interval$ avg(data.serviceResponse.time) as "Avg Time"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latency Trends - Actual Response Time</title>
+      <table>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &lt; 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ |Convert num(data.serviceResponse.time) as totalLatency
+| eval less_than_500=if(totalLatency&lt;=500,1,0)
+| eval less_than_1000=if(totalLatency&lt;=1000,1,0)
+| eval less_than_2000=if(totalLatency&lt;=2000,1,0) 
+| eval between_500_1000=if((totalLatency&gt;500 AND totalLatency&lt;=1000),1,0)
+| eval between_1000_2000=if((totalLatency&gt;1000 AND totalLatency&lt;=2000),1,0)
+| eval between_2000_5000=if((totalLatency&gt;2000 AND totalLatency&lt;=5000),1,0)
+| eval more_than_5000=if(totalLatency&gt;5000,1,0) 
+| stats sum(less_than_500)  as "Less_than 500"  sum(between_500_1000) as "Between 500 to 1000" sum(less_than_1000)  as "Less_than 1000" sum(between_1000_2000) as "Between 1000 to 2000" sum(between_2000_5000) as "Between 2000 to 5000" sum(more_than_5000) as "Greater_than 5000"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latest Error Transactions</title>
+      <table>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.status &gt;= 400 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ | rename data.serviceRequest.uri as "Resource Name", data.serviceResponse.status as "Status Code", data.serviceResponse.time as "Response Time" source.environment as "Environment", source.domain as "Domain",data.serviceResponse.error.status as "Status Message" | table _time,E*,D*,Resou*,S*,"Status Message",Respo* | sort by _time desc</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latency &gt; 2 seconds</title>
+      <table>
+        <search>
+          <query>index=app_pcf cf_org_name = *Alberta* cf_space_name=$env$ cf_app_name=*src4c-profile* source_type="APP/PROC/WEB" "state":"COMPLETED" NOT "*health*" | search SplunkEventReporter | rex field=msg "(?P&lt;json&gt;{.+)" | spath input=json | search data.type=SERVICE AND data.serviceResponse.time &gt; 2000 | rex field=data.serviceRequest.uri mode=sed "s/[a-fA-F0-9]{8}-([a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}/UUID/g" | replace /api/accountholder/browserexchange/* WITH /api/accountholder/browserexchange/ContextId IN data.serviceRequest.uri  | replace /api/accountholder/challenge/* WITH /api/accountholder/challenge/ContextId IN data.serviceRequest.uri | regex data.serviceRequest.uri=$endpoint$ | rename data.serviceRequest.uri as "Resource Name", data.serviceResponse.status as "Status Code", data.serviceResponse.time as "Response Time" source.environment as "Environment", source.domain as "Domain",data.serviceResponse.error.status as "Status Message" | table _time,E*,D*,Resou*,S*,"Status Message",Respo* | sort by _time desc</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
